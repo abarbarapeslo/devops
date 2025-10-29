@@ -1,4 +1,4 @@
-# devops
+# DEVOPS
 
 # Configuração do GitHub no Fedora / EC2
 
@@ -9,37 +9,40 @@ Este documento descreve o passo a passo que foi seguido para autenticar, adicion
 ## 1. Login no GitHub via CLI (`gh`)
 
 ### Passos:
-1. Instalar o GitHub CLI:
+#### 1. Instalar o GitHub CLI:
 ```bash
 sudo dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
 sudo dnf install gh
+```
 
+---
 
+#### 2. Autenticar com o GitHub CLI:
+```
 gh auth login
-# Selecionar GitHub.com
-# Protocolo: SSH
-# Método: Paste an authentication token
+```
+###### Selecionar GitHub.com > Protocolo: SSH > Método: Paste an authentication token
 
+#### 3. Alterar o remote do repositório para usar porta 443:
+```
+git remote set-url origin ssh://git@ssh.github.com:443/USUARIO/NOME_DO_REPOSITORIO.git
+```
 
+#### 4. Criar um Personal Access Token (PAT) no GitHub com os seguintes escopos:
 
-gh auth login
-# Selecionar GitHub.com
-# Protocolo: SSH
-# Método: Paste an authentication token
+- repo [✅]
+- read:org [✅]
+- gist [✅]
+- workflow [✅]
 
+- admin:public_key [✅] (necessário para SSH)
 
-Criar um Personal Access Token (PAT) no GitHub com os seguintes escopos:
-
-repo ✅
-read:org ✅
-gist ✅
-workflow ✅
-
-admin:public_key ✅ (necessário para SSH)
-
-Colar o token quando solicitado pelo gh auth login.
-
-Verificar status do login: 
+#### 5. Verificar status do login: 
+``` 
 gh auth status
+```
+
+> ⚠️ Dica: Não use sudo para git push. Isso pode gerar erros de permissão da chave SSH.
+
 
 
