@@ -1,0 +1,13 @@
+Passos para o projeto Devops:
+
+-Criar    instância AWS;,
+-Criar    um Script;,
+-Automatizar Script;,
+-Criar    repositório no Github;,
+-Versionar o código com Git através do    Github;,
+-Criar um app Python simples (ex: Streamlit ou Flask);,
+-Dockerizar o app;,
+-CI/CD com GitHub Actions;,
+-Gerenciamento de infraestrutura com Terraform;,
+-Configuração com Ansible;,
+-Monitoramento e Observabilidade (Grafana e Zabbix).
