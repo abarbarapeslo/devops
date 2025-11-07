@@ -1,4 +1,4 @@
-# DEVOPS
+# PROJETO DEVOPS
 
 # Configuração do GitHub no Fedora / EC2
 
