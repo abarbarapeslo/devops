@@ -114,3 +114,4 @@ async def atualizar_registro(id: int, nome: str, idade: int, db: Session = Depen
     db.commit()
     db.refresh(registro)
     return registro
+# trigger GitHub Actions
