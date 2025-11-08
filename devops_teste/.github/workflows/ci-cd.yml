@@ -1,4 +1,4 @@
-name: CI/CD Pipeline - DevOps Teste
+name: main - DevOps Teste
 
 on:
   push:
