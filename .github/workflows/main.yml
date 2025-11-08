@@ -1,0 +1,32 @@
+name: main
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs: 
+  build: 
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configura Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instala dependências
+        run: |
+          pip install -r requirements.txt
+
+      - name: Testa inicialização da aplicação
+        run: |
+          python -m py_compile main.py
+
+      - name: Build da imagem Docker
+        run: |
+          docker build -t devops_teste:latest .
