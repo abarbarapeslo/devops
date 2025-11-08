@@ -30,3 +30,12 @@ jobs:
       - name: Build da imagem Docker
         run: |
           docker build -t devops_teste:latest .
+
+                # 🧹 Etapa de limpeza (destroy)
+      - name: Destroy containers e imagens temporárias
+        if: always()   # garante que será executado mesmo se algo falhar
+        run: |
+          echo "Removendo containers e imagens temporárias..."
+          docker ps -aq | xargs -r docker rm -f
+          docker images -q devops_teste:latest | xargs -r docker rmi -f
+          echo "Limpeza concluída ✅"
