@@ -1,58 +1,45 @@
-# Arquivo: devops/docker-compose.yml
-# ----------------------------------
-# Versão do Docker Compose
+# Arquivo: devops/docker-compose.yml (MODIFICADO)
 version: "3.8"
 
 services:
-  # 1. Serviço do Banco de Dados (PostgreSQL)
   db:
     image: postgres:14-alpine
     container_name: devops_db
-    # Mapeia a porta do container (5432) para a sua máquina (5432)
     ports:
       - "5432:5432"
-    # Variáveis de ambiente para criar o banco e o usuário
     environment:
-      - POSTGRES_DB=dev_db
-      - POSTGRES_USER=dev_user
-      - POSTGRES_PASSWORD=dev_pass
-    # Garante que os dados do banco persistam se o container reiniciar
+      # O Docker Compose vai ler estas variáveis do arquivo .env
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # 2. Serviço da Aplicação (FastAPI)
   app:
     container_name: devops_app
-    # Constrói a imagem usando o Dockerfile na pasta atual (.)
     build: .
-    # Mapeia a porta do Uvicorn (8000) para a sua máquina (8000)
     ports:
       - "8000:8000"
-    # Monta o código local dentro do container
-    # Isso permite que o Uvicorn reinicie quando você salvar o .py (hot-reload)
     volumes:
       - .:/app
-    # Depende do serviço 'db'. O app só sobe DEPOIS que o 'db' estiver pronto.
     depends_on:
       - db
-    # Injeta as variáveis de ambiente que o 'main.py' precisa
     environment:
-      # A. Variáveis do Banco (para conectar ao serviço 'db')
-      - DB_HOST=db  # O nome do serviço 'db' vira o "endereço"
-      - DB_USER=dev_user
-      - DB_PASS=dev_pass
-      - DB_NAME=dev_db
-      # B. Variáveis do App (para S3/SES)
+      # A. Variáveis do Banco (lidas do .env)
+      - DB_HOST=db
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASS=${POSTGRES_PASSWORD}
+      - DB_NAME=${POSTGRES_DB}
+      
+      # B. Variáveis FALSAS do App (lidas do .env)
       - BUCKET_NAME=local-bucket-teste
       - SES_SENDER_EMAIL=sender@local.com
       - SES_RECIPIENT_EMAIL=recipient@local.com
-      # C. Variáveis FALSAS da AWS (para o Boto3 não dar erro)
-      # O Boto3 (SDK da AWS) precisa de *alguma* credencial para iniciar.
-      # Mesmo que não vá funcionar (não vai enviar e-mail), isso evita que o app quebre.
-      - AWS_ACCESS_KEY_ID=dummy
-      - AWS_SECRET_ACCESS_KEY=dummy
-      - AWS_DEFAULT_REGION=us-east-1
+      
+      # C. Variáveis FALSAS da AWS (lidas do .env)
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
 
-# Define o volume nomeado para persistir os dados do PostgreSQL
 volumes:
   postgres_data:

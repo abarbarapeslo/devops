@@ -32,6 +32,9 @@ __pycache__/
 venv/
 env/
 
+# Ignora o arquivo de variáveis de ambiente local
+.env
+
 # 3. Dependências e IDEs (Boas Práticas)
 # Ignora a pasta de pacotes do pip (caso use -t)
 *.egg-info/
