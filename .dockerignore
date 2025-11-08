@@ -1,0 +1,37 @@
+# ===================================================================
+# ARQUIVO: .dockerignore
+# ONDE: /DEVOPS/.dockerignore
+# ===================================================================
+
+# 1. Metadados do Docker e Git
+# Ignora o próprio Dockerfile e o .dockerignore
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Ignora todo o histórico do Git
+.git/
+.gitignore
+
+# 2. Infraestrutura e CI/CD
+# O container do app NÃO precisa do código de infra ou do pipeline
+infra/
+.github/
+
+# 3. Código e Arquivos Locais
+# O banco de dados local não deve ir para a imagem
+banco_de_dados.db
+
+# Python cache (será gerado dentro do container se necessário)
+__pycache__/
+*.pyc
+
+# Ambientes virtuais locais
+.venv/
+venv/
+env/
+
+# 4. Documentação e Outros
+README.md
+explicacao.txt
+pipeline.txt

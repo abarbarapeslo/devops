@@ -1,4 +1,6 @@
-name: main
+# Nome do Workflow
+name: CI/CD - Build, Push (ECR) e Deploy (Terraform)
+
 on:
   push:
     branches: [ main ]
@@ -6,36 +8,110 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-jobs: 
-  build: 
+# Permissões globais para o OIDC (autenticação segura sem chaves)
+permissions:
+  id-token: write   # Necessário para o GitHub se autenticar na AWS
+  contents: read    # Necessário para o 'actions/checkout'
+
+# ===================================================================
+# 💡 VARIÁVEIS GLOBAIS
+# Estas são variáveis de ambiente, NÃO segredos.
+# ===================================================================
+env:
+  # 1. Mude isso para o nome do seu repositório no ECR
+  ECR_REPOSITORY: "meu-app-devops"
+  
+  # 2. Mude isso para a sua região padrão
+  AWS_REGION: "us-east-1"
+
+# ===================================================================
+# 🚀 JOBS (Trabalhos)
+# ===================================================================
+jobs:
+  # -----------------------------------------------------------------
+  # JOB 1: Constrói a imagem Docker e envia para o ECR
+  # -----------------------------------------------------------------
+  build-and-push:
+    name: 1. Build e Push para ECR
     runs-on: ubuntu-latest
 
+    # O 'outputs' permite passar o nome da imagem (tag) para o próximo job
+    outputs:
+      image_tag: ${{ steps.build-image.outputs.image_tag }}
+
     steps:
-      - name: Checkout código
+      - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Configura Python
-        uses: actions/setup-python@v5
+      - name: Configurar credenciais AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          python-version: '3.11'
+          # 👇 LEIA ISSO! Esta variável DEVE ser criada no GitHub
+          # (Settings > Environments > New > vars.AWS_OIDC_ROLE_ARN)
+          role-to-assume: ${{ vars.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Instala dependências
-        run: |
-          pip install -r requirements.txt
+      - name: Login no Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Testa inicialização da aplicação
+      - name: Build, Tag e Push da imagem Docker
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          python -m py_compile main.py
+          # 1. Gera uma tag de imagem única (o hash curto do commit)
+          IMAGE_TAG=$(echo $GITHUB_SHA | cut -c1-12)
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_OUTPUT # Salva a tag para o 'outputs'
 
-      - name: Build da imagem Docker
-        run: |
-          docker build -t devops_teste:latest .
+          # 2. Constrói a imagem
+          #    -f aponta para o seu Dockerfile
+          #    ./devops é o "contexto" (a pasta onde o COPY . . será executado)
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f devops/Dockerfile ./devops
+          
+          # 3. Envia a imagem para o ECR
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-                # 🧹 Etapa de limpeza (destroy)
-      - name: Destroy containers e imagens temporárias
-        if: always()   # garante que será executado mesmo se algo falhar
+  # -----------------------------------------------------------------
+  # JOB 2: Roda o Terraform para fazer o deploy da infra
+  # -----------------------------------------------------------------
+  deploy-infra:
+    name: 2. Deploy da Infra (Terraform)
+    runs-on: ubuntu-latest
+    needs: build-and-push # Só roda DEPOIS que o Job 1 terminar
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar credenciais AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # 👇 Usa a MESMA variável de ambiente do GitHub
+          role-to-assume: ${{ vars.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Configurar Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        id: init
+        # O 'working-directory' diz ao Terraform onde seus arquivos .tf estão
+        working-directory: devops/infra
+        run: terraform init
+
+      - name: Terraform Plan
+        id: plan
+        working-directory: devops/infra
         run: |
-          echo "Removendo containers e imagens temporárias..."
-          docker ps -aq | xargs -r docker rm -f
-          docker images -q devops_teste:latest | xargs -r docker rmi -f
-          echo "Limpeza concluída ✅"
+          # 👇 AQUI ESTÁ A MÁGICA:
+          # Injeta a tag da imagem (do Job 1) como uma variável no Terraform
+          terraform plan -out=tfplan \
+            -var="image_tag=${{ needs.build-and-push.outputs.image_tag }}"
+
+      - name: Terraform Apply
+        # Só aplica de verdade se for um push na branch 'main'
+        if: github.ref == 'refs/heads/main'
+        working-directory: devops/infra
+        run: |
+          terraform apply -auto-approve tfplan

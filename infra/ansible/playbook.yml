@@ -1,0 +1,40 @@
+---
+# Playbook para rodar o deploy do Terraform localmente.
+# O pipeline de CI/CD (main.yml) roda o terraform diretamente.
+# Este playbook é para desenvolvimento local.
+
+- name: Provisionar infra com Terraform (Local)
+  hosts: deployer
+  gather_facts: False
+  
+  # Pede a tag da imagem no terminal
+  vars_prompt:
+    - name: "image_tag_prompt"
+      prompt: "Qual tag de imagem você quer usar (ex: 'latest' ou um hash)?"
+      private: False
+      
+  tasks:
+    - name: Garantir que terraform e awscli estejam instalados
+      package:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - terraform
+        - awscli
+      when: ansible_os_family in ["Debian", "RedHat"]
+      # Nota: Em macOS/Windows, a instalação é diferente (ex: Homebrew)
+
+    - name: Rodar terraform init
+      command: terraform init
+      args:
+        chdir: "{{ project_dir }}/infra"
+
+    - name: Rodar terraform apply
+      command: >
+        terraform apply -auto-approve
+        -var="image_tag={{ image_tag_prompt }}"
+      args:
+        chdir: "{{ project_dir }}/infra"
+      environment:
+        # Pega as credenciais do seu ambiente local
+        AWS_DEFAULT_REGION: "{{ aws_region }}"

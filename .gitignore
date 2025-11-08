@@ -1,0 +1,54 @@
+# ===================================================================
+# ARQUIVO: .gitignore
+# ONDE: /DEVOPS/.gitignore
+# ===================================================================
+
+# 1. Terraform (CRÍTICO)
+# Ignora arquivos de estado que podem conter segredos e senhas
+infra/*.tfstate
+infra/*.tfstate.backup
+
+# Ignora o cache de plugins e módulos do Terraform
+infra/.terraform/
+
+# Ignora planos de execução
+infra/tfplan
+
+# Ignora o arquivo de variáveis de ambiente.
+# Este arquivo é ÚNICO por máquina/ambiente.
+# A amiga da "Deployer" irá criar o dela baseado no .example
+infra/terraform.tfvars
+
+# 2. Python (Essencial)
+# Ignora o banco de dados SQLite local
+banco_de_dados.db
+
+# Ignora os "bytecodes" compilados do Python
+__pycache__/
+*.pyc
+
+# Ignora ambientes virtuais (ex: venv, .venv, env)
+.venv/
+venv/
+env/
+
+# 3. Dependências e IDEs (Boas Práticas)
+# Ignora a pasta de pacotes do pip (caso use -t)
+*.egg-info/
+build/
+dist/
+lib/
+lib64/
+
+# Ignora arquivos de IDE
+.idea/
+.vscode/
+
+# 4. Arquivos de Sistema Operacional
+.DS_Store
+Thumbs.db
+
+*.txt
+*.pdf
+
+importantes/

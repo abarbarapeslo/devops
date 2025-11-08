@@ -1,0 +1,6 @@
+# Exemplo de arquivo de variáveis.
+# Copie isso para um arquivo chamado 'terraform.tfvars'
+# (NUNCA envie 'terraform.tfvars' para o Git)
+
+ses_sender_email    = "seu-email-verificado@exemplo.com"
+ses_recipient_email = "email-da-sua-amiga@exemplo.com"
